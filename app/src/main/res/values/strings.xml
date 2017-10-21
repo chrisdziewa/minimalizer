@@ -1,0 +1,25 @@
+<resources>
+    <string name="app_name">Minimalizer</string>
+    <string name="keep_checkbox">Keep?</string>
+    <string name="new_item_hint">Add a new item</string>
+    <string name="add_item_button">Add Item</string>
+
+    <!-- Navigation Drawer -->
+    <string-array name="navigation_list">
+        <item>Clutter List</item>
+        <item>Keep List</item>
+        <item>Discard List</item>
+        <item>Preferences</item>
+    </string-array>
+
+    <string name="drawer_open">Open navigation drawer</string>
+    <string name="drawer_close">Close navigation drawer</string>
+
+    <!-- Preferences -->
+    <string-array name="prefs_minimalist_levels">
+        <item>Easy</item>
+        <item>Normal</item>
+        <item>Advanced</item>
+        <item>Expert</item>
+    </string-array>
+</resources>

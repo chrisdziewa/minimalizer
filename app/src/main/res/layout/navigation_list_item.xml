@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TextView
+    android:layout_width="match_parent"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:gravity="left|center_vertical"
+    android:layout_height="wrap_content"
+    tools:text="Clutter List"
+    android:padding="16dp"
+    android:textAppearance="?android:textAppearanceMedium"
+    android:id="@+id/link_text"
+    xmlns:android="http://schemas.android.com/apk/res/android"/>

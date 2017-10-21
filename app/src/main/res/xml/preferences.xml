@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+                  android:layout_width="match_parent"
+                  android:layout_height="match_parent">
+    <ListPreference
+        android:key="declutter_intensity"
+        android:title="Minimalist Level"
+        android:entries="@array/prefs_minimalist_levels"
+        android:entryValues="@array/prefs_minimalist_level_values">
+    </ListPreference>
+
+</PreferenceScreen>

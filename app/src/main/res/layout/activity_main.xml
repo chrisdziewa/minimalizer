@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.v4.widget.DrawerLayout
+    android:id="@+id/navigation_drawer"
+    android:layout_height="match_parent"
+    android:layout_width="match_parent"
+    android:layout_gravity="start"
+    xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <RelativeLayout
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <LinearLayout
+            android:id="@+id/add_item_bar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignParentTop="true"
+            android:background="@color/colorPrimaryDark"
+            android:padding="16dp"
+            android:elevation="10dp"
+            android:visibility="gone"
+            android:orientation="horizontal">
+
+            <EditText
+                android:id="@+id/new_item_edit_text"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="4"
+                android:hint="@string/new_item_hint"
+                android:maxLength="60"
+                android:paddingTop="16dp"
+                android:maxLines="1"
+                android:paddingBottom="16dp"
+                android:inputType="text"
+                android:textColor="#FFFFFF"
+                android:imeOptions="actionDone"
+                android:textColorHint="#FFFFFF"/>
+
+            <ImageButton
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:background="#00BBBB"
+                android:id="@+id/add_item_button"
+                android:src="@drawable/ic_add_white"
+                android:contentDescription="@string/add_item_button"/>
+
+        </LinearLayout>
+
+        <android.support.v7.widget.RecyclerView
+            android:id="@+id/recycler_view"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/add_item_bar"
+            android:paddingLeft="16dp"
+            android:paddingRight="16dp"/>
+
+    </RelativeLayout>
+
+    <!-- Navigation list drawer -->
+    <ListView
+        android:background="@android:color/white"
+        android:id="@+id/navigation_drawer_list"
+        android:layout_width="200dp"
+        android:layout_gravity="start|left"
+        android:layout_height="match_parent"/>
+</android.support.v4.widget.DrawerLayout>
