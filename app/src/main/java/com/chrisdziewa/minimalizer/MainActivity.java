@@ -2,16 +2,12 @@ package com.chrisdziewa.minimalizer;
 
 import android.app.Activity;
 import android.content.ContentValues;
-import android.content.res.Configuration;
 import android.database.Cursor;
 import android.os.Bundle;
-import android.preference.PreferenceFragment;
 import android.support.annotation.Nullable;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
-import android.support.v4.widget.DrawerLayout;
-import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -23,12 +19,9 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
-import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
-import android.widget.ListView;
 import android.widget.TextView;
 
 import com.chrisdziewa.minimalizer.data.ItemContract.ItemEntry;
@@ -46,12 +39,6 @@ public class MainActivity extends AppCompatActivity implements
     };
     private static final String INPUT_TEXT_KEY = "inputText";
 
-    // Navigation Drawer Variables
-    private DrawerLayout mDrawerLayout;
-    private ListView mDrawerList;
-    private ActionBarDrawerToggle mDrawerToggle;
-    private String[] mDrawerLinks;
-
     private ItemAdapter mItemAdapter;
     private RecyclerView mRecyclerView;
     private LinearLayout mAddButtonBar;
@@ -67,46 +54,6 @@ public class MainActivity extends AppCompatActivity implements
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // Setup navigation drawer
-        mDrawerLayout = (DrawerLayout) findViewById(R.id.navigation_drawer);
-        mDrawerList = (ListView) findViewById(R.id.navigation_drawer_list);
-        mDrawerLinks = getResources().getStringArray(R.array.navigation_list);
-        mDrawerList.setAdapter(new ArrayAdapter<String>(
-                this, R.layout.navigation_list_item, mDrawerLinks)
-        );
-
-        mDrawerToggle = new ActionBarDrawerToggle(
-                this, mDrawerLayout, R.string.drawer_open, R.string.drawer_close) {
-
-            @Override
-            public void onDrawerOpened(View drawerView) {
-                super.onDrawerOpened(drawerView);
-                invalidateOptionsMenu();
-            }
-
-            @Override
-            public void onDrawerClosed(View drawerView) {
-                super.onDrawerClosed(drawerView);
-                invalidateOptionsMenu();
-            }
-        };
-
-        mDrawerLayout.addDrawerListener(mDrawerToggle);
-
-        mDrawerList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-                if (i == 3) {
-                    PreferenceFragment fragment = new SettingsFragment();
-                    getFragmentManager()
-                            .beginTransaction()
-                            .add(fragment, "Preference Fragment")
-                            .commit();
-                }
-            }
-        });
-
-        // End navigation bar setup
         mAddButtonBar = (LinearLayout) findViewById(R.id.add_item_bar);
         mAddItemEditText = (EditText) findViewById(R.id.new_item_edit_text);
         if (savedInstanceState != null) {
@@ -135,31 +82,7 @@ public class MainActivity extends AppCompatActivity implements
             mAddButtonBar.setVisibility(View.GONE);
         }
 
-        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-        getSupportActionBar().setHomeButtonEnabled(true);
         getSupportLoaderManager().initLoader(ITEM_LOADER_ID, null, this);
-    }
-
-    /* Called whenever we call invalidateOptionsMenu() */
-    @Override
-    public boolean onPrepareOptionsMenu(Menu menu) {
-        // If the nav drawer is open, hide action items related to the content view
-        boolean drawerOpen = mDrawerLayout.isDrawerOpen(mDrawerList);
-        menu.findItem(R.id.action_add).setVisible(!drawerOpen);
-        return super.onPrepareOptionsMenu(menu);
-    }
-
-    @Override
-    protected void onPostCreate(Bundle savedInstanceState) {
-        super.onPostCreate(savedInstanceState);
-        // Sync the toggle state after onRestoreInstanceState has occurred.
-        mDrawerToggle.syncState();
-    }
-
-    @Override
-    public void onConfigurationChanged(Configuration newConfig) {
-        super.onConfigurationChanged(newConfig);
-        mDrawerToggle.onConfigurationChanged(newConfig);
     }
 
     @Override
@@ -173,10 +96,6 @@ public class MainActivity extends AppCompatActivity implements
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-
-        if (mDrawerToggle.onOptionsItemSelected(item)) {
-            return true;
-        }
 
         switch (item.getItemId()) {
             case R.id.action_add:
