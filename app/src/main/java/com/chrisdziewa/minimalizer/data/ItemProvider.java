@@ -59,6 +59,8 @@ public class ItemProvider extends ContentProvider {
                         @Nullable String[] selectionArgs, @Nullable String sortOrder) {
         Cursor cursor;
 
+        // Thanks to Dan04 and Surya Wijaya Madjid for case insensitive ordering
+        // https://stackoverflow.com/questions/2413427/how-to-use-sql-order-by-statement-to-sort-results-case-insensitive
         switch (sUriMatcher.match(uri)) {
             case CODE_ITEMS:
                 cursor = mOpenHelper.getReadableDatabase().query(
@@ -68,7 +70,7 @@ public class ItemProvider extends ContentProvider {
                         selectionArgs,
                         null,
                         null,
-                        sortOrder
+                        ItemEntry.COLUMN_NAME + " COLLATE NOCASE ASC"
                 );
                 break;
 
