@@ -5,10 +5,12 @@ package com.chrisdziewa.minimalizer;
  */
 
 public class Item {
+    private long mId;
     private String mName;
     private boolean mKept;
 
-    public Item(String name, boolean keep) {
+    public Item(long id, String name, boolean keep) {
+        mId = id;
         mName = name;
         mKept = keep;
     }
@@ -27,5 +29,9 @@ public class Item {
 
     public void setKept(boolean kept) {
         mKept = kept;
+    }
+
+    public long getId() {
+        return mId;
     }
 }
