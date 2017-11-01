@@ -130,7 +130,14 @@ public class ItemProvider extends ContentProvider {
 
     @Override
     public int delete(@NonNull Uri uri, @Nullable String s, @Nullable String[] strings) {
-        return 0;
+        switch (sUriMatcher.match(uri)) {
+            case CODE_ITEMS:
+                int rowsAffected = mOpenHelper.getWritableDatabase().delete(ItemEntry.TABLE_NAME, null, null);
+                return rowsAffected;
+
+            default:
+                throw new IllegalArgumentException("Unsupported uri: " + uri);
+        }
     }
 
     @Override
@@ -159,5 +166,4 @@ public class ItemProvider extends ContentProvider {
                 throw new IllegalArgumentException("Unsupported uri: " + uri);
         }
     }
-
 }

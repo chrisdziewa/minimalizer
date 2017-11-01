@@ -6,7 +6,6 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.support.annotation.NonNull;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -27,16 +26,27 @@ class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ClutterHolder> {
 
     private static final String TAG = "ItemAdapter";
 
-    private final static float KEEP_RATIO = (float) 1 / 4;
+    public final static float KEEP_RATIO = (float) 1 / 4;
 
     private Cursor mCursor;
     private Context mContext;
     private ArrayList<Item> mPositionList;
+    private ItemCallback mItemCallback;
 
-    public ItemAdapter(@NonNull Context context) {
+    interface ItemCallback {
+        public void getRemainingCredits();
+    }
+
+    // Used to get remaining number of items that can be kept
+    public double getRemainingCredits() {
+        double keepAmount = Math.ceil(getItemCount() / 4);
+        return keepAmount - getCheckedCount();
+    }
+
+    public ItemAdapter(@NonNull Context context, ItemCallback itemCallback) {
         mContext = context;
-        swapCursor(null);
         mPositionList = new ArrayList<>();
+        mItemCallback = itemCallback;
     }
 
     void swapCursor(Cursor newCursor) {
@@ -50,6 +60,7 @@ class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ClutterHolder> {
 
         mCursor = newCursor;
         mPositionList = new ArrayList<>(mCursor.getCount());
+
         notifyDataSetChanged();
     }
 
@@ -70,39 +81,7 @@ class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ClutterHolder> {
         holder.itemName.setText(item.getName());
         holder.itemCheckBox.setChecked(item.isKept());
         holder.item = item;
-        //TODO Needs to be updated in object because every time view is recycled, a number is added to checked count
-
-//        holder.itemCheckBox.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View view) {
-//                int position = holder.getAdapterPosition();
-//                Item item = mPositionList.get(position);
-//                long id = item.getId();
-//
-//                // check item to see if it is being kept or not
-//                item.setKept(!item.isKept());
-//
-//                // Make sure we haven't surpassed our limit
-//                if (item.isKept() &&
-//                        (getCheckedCount() / getItemCount()) > KEEP_RATIO) {
-//                    holder.itemCheckBox.setChecked(false);
-//                    return;
-//                } else if (!item.isKept()) {
-//                    holder.itemCheckBox.setChecked(false);
-//                } else {
-//                    holder.itemCheckBox.setChecked(true);
-//                }
-//
-//                ContentValues values = new ContentValues();
-//                // Change the checkbox value in the database
-//                values.put(ItemEntry.COLUMN_KEEP, item.isKept() ? 1 : 0);
-//                // Update database if changed
-//                Uri uri = Uri.parse(ItemEntry.CONTENT_URI + "/" + String.valueOf(id));
-//                int rowsAffected = mContext.getContentResolver().update(uri, values, ItemEntry._ID + " = ?", new String[]{String.valueOf(id)});
-//            }
-//    });
-
-}
+    }
 
     public int getCheckedCount() {
         int checkedCount = 0;
@@ -132,50 +111,46 @@ class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ClutterHolder> {
         return mCursor.getCount();
     }
 
-class ClutterHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
+    class ClutterHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
 
-    final TextView itemName;
-    final CheckBox itemCheckBox;
-    Item item;
+        final TextView itemName;
+        final CheckBox itemCheckBox;
+        Item item;
 
-    public ClutterHolder(View itemView) {
-        super(itemView);
+        public ClutterHolder(View itemView) {
+            super(itemView);
 
-        // Get the viewholder components
-        itemName = (TextView) itemView.findViewById(R.id.item_name);
-        itemCheckBox = (CheckBox) itemView.findViewById(R.id.keep_checkbox);
-        itemCheckBox.setOnClickListener(this);
-    }
-
-    @Override
-    public void onClick(View view) {
-        // check item to see if it is being kept or not
-        item.setKept(!item.isKept());
-
-        Log.i(TAG, "======================================");
-        Log.i(TAG, "getCheckedCount: " + getCheckedCount());
-        Log.i(TAG, "cursor count: " + getItemCount());
-        Log.i(TAG, "ratio = " + (getCheckedCount() / getItemCount()));
-        Log.i(TAG, "KEEP_RATIO: " + KEEP_RATIO);
-
-        // Make sure we haven't surpassed our limit
-        if (item.isKept() &&
-                ((float) getCheckedCount() / getItemCount()) > KEEP_RATIO) {
-            itemCheckBox.setChecked(false);
-            Toast.makeText(mContext, "Only a quarter of the items on your list may be kept", Toast.LENGTH_SHORT).show();
-            return;
-        } else if (!item.isKept()) {
-            itemCheckBox.setChecked(false);
-        } else {
-            itemCheckBox.setChecked(true);
+            // Get the viewholder components
+            itemName = (TextView) itemView.findViewById(R.id.item_name);
+            itemCheckBox = (CheckBox) itemView.findViewById(R.id.keep_checkbox);
+            itemCheckBox.setOnClickListener(this);
         }
 
-        ContentValues values = new ContentValues();
-        // Change the checkbox value in the database
-        values.put(ItemEntry.COLUMN_KEEP, item.isKept() ? 1 : 0);
-        // Update database if changed
-        Uri uri = Uri.parse(ItemEntry.CONTENT_URI + "/" + String.valueOf(item.getId()));
-        int rowsAffected = mContext.getContentResolver().update(uri, values, ItemEntry._ID + " = ?", new String[]{String.valueOf(item.getId())});
+        @Override
+        public void onClick(View view) {
+            // check item to see if it is being kept or not
+            item.setKept(!item.isKept());
+
+            // Make sure we haven't surpassed our limit
+            if (item.isKept() &&
+                    ((float) getCheckedCount() / getItemCount()) > KEEP_RATIO) {
+                itemCheckBox.setChecked(false);
+                item.setKept(false);
+                Toast.makeText(mContext, "0 credits remaining. Uncheck an item to keep this one", Toast.LENGTH_LONG).show();
+            } else if (!item.isKept()) {
+                itemCheckBox.setChecked(false);
+            } else {
+                itemCheckBox.setChecked(true);
+            }
+
+            ContentValues values = new ContentValues();
+            // Change the checkbox value in the database
+            values.put(ItemEntry.COLUMN_KEEP, item.isKept() ? 1 : 0);
+            // Update database if changed
+            Uri uri = Uri.parse(ItemEntry.CONTENT_URI + "/" + String.valueOf(item.getId()));
+            int rowsAffected = mContext.getContentResolver().update(uri, values, ItemEntry._ID + " = ?", new String[]{String.valueOf(item.getId())});
+
+            mItemCallback.getRemainingCredits();
+        }
     }
-}
 }

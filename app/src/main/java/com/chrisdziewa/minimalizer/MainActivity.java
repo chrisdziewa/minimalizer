@@ -23,11 +23,12 @@ import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.chrisdziewa.minimalizer.data.ItemContract.ItemEntry;
 
-public class MainActivity extends AppCompatActivity implements
-        LoaderManager.LoaderCallbacks<Cursor> {
+public class MainActivity extends AppCompatActivity implements ItemAdapter.ItemCallback {
+
 
     private static final String TAG = "MainActivity";
     private static final String SHOW_ADD_BAR_KEY = "showAddBar";
@@ -47,6 +48,7 @@ public class MainActivity extends AppCompatActivity implements
     private Boolean mShowAddBar;
     private int mPosition;
 
+    private static final int CHECKED_SUM_LOADER_ID = 130;
     private static final int ITEM_LOADER_ID = 300;
 
     @Override
@@ -59,8 +61,7 @@ public class MainActivity extends AppCompatActivity implements
         if (savedInstanceState != null) {
             mShowAddBar = savedInstanceState.getBoolean(SHOW_ADD_BAR_KEY, false);
             mAddItemEditText.setText(savedInstanceState.getString(INPUT_TEXT_KEY));
-        }
-        else {
+        } else {
             mShowAddBar = false;
         }
 
@@ -71,9 +72,8 @@ public class MainActivity extends AppCompatActivity implements
 
         mRecyclerView.setLayoutManager(layoutManager);
 
-        mItemAdapter = new ItemAdapter(this);
+        mItemAdapter = new ItemAdapter(this, this);
         mRecyclerView.setAdapter(mItemAdapter);
-
 
         // https://stackoverflow.com/questions/19217582/implicit-submit-after-hitting-done-on-the-keyboard-at-the-last-edittext
         if (mShowAddBar) {
@@ -82,7 +82,16 @@ public class MainActivity extends AppCompatActivity implements
             mAddButtonBar.setVisibility(View.GONE);
         }
 
-        getSupportLoaderManager().initLoader(ITEM_LOADER_ID, null, this);
+        // Load sum for subtitle
+        getSupportLoaderManager().initLoader(CHECKED_SUM_LOADER_ID, null, checkedSumLoader);
+
+        // Load items
+        getSupportLoaderManager().initLoader(ITEM_LOADER_ID, null, itemLoaderCallbacks);
+    }
+
+    // Remaining credits displayed under the Actionbar title
+    private void updateCreditsSubtitle(double creditsRemaining) {
+        getSupportActionBar().setSubtitle("Remaining credits: " + (int) creditsRemaining);
     }
 
     @Override
@@ -150,6 +159,20 @@ public class MainActivity extends AppCompatActivity implements
                 }
 
                 return true;
+
+            case R.id.action_delete_all:
+                int rowsDeleted = getContentResolver().delete(ItemEntry.CONTENT_URI, null, null);
+
+                if (rowsDeleted > 0) {
+                    Toast.makeText(getApplicationContext(), "List items have been deleted", Toast.LENGTH_SHORT).show();
+                }
+
+                // Clear adapter list
+                mItemAdapter = new ItemAdapter(this, this);
+                mRecyclerView.setAdapter(mItemAdapter);
+
+                return true;
+
             default:
                 return super.onOptionsItemSelected(item);
         }
@@ -163,33 +186,83 @@ public class MainActivity extends AppCompatActivity implements
         super.onSaveInstanceState(outState);
     }
 
-    @Override
-    public Loader<Cursor> onCreateLoader(int id, Bundle args) {
-        if (id != ITEM_LOADER_ID) {
-            throw new RuntimeException("Loader Not Implemented: " + id);
+    // Loader callbacks for item loading
+    private LoaderManager.LoaderCallbacks<Cursor> itemLoaderCallbacks = new LoaderManager.LoaderCallbacks<Cursor>() {
+        @Override
+        public Loader<Cursor> onCreateLoader(int id, Bundle args) {
+            switch (id) {
+                case ITEM_LOADER_ID:
+                    return new CursorLoader(getApplicationContext(),
+                            ItemEntry.CONTENT_URI,
+                            ITEMS_PROJECTION, null, null,
+                            ItemEntry._ID + " ASC");
+
+                default:
+                    throw new RuntimeException("Loader Not Implemented: " + id);
+            }
         }
 
-        return new CursorLoader(getApplicationContext(),
-                ItemEntry.CONTENT_URI,
-                ITEMS_PROJECTION, null, null,
-                ItemEntry._ID + " ASC");
-    }
+        @Override
+        public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
+            if (data != null) {
+                mItemAdapter.swapCursor(data);
 
-    @Override
-    public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
-        if (data != null) {
-            mItemAdapter.swapCursor(data);
+                if (mPosition == RecyclerView.NO_POSITION) mPosition = 0;
+                mRecyclerView.smoothScrollToPosition(mPosition);
+                mRecyclerView.setVisibility(View.VISIBLE);
 
-            if (mPosition == RecyclerView.NO_POSITION) mPosition = 0;
-            mRecyclerView.smoothScrollToPosition(mPosition);
-            mRecyclerView.setVisibility(View.VISIBLE);
-        } else {
-            mRecyclerView.setVisibility(View.INVISIBLE);
+            } else {
+                mRecyclerView.setVisibility(View.INVISIBLE);
+            }
         }
-    }
 
+        @Override
+        public void onLoaderReset(Loader<Cursor> loader) {
+            mItemAdapter.swapCursor(null);
+        }
+    };
+
+    // Loads the sum of checked items
+    private LoaderManager.LoaderCallbacks<Cursor> checkedSumLoader = new LoaderManager.LoaderCallbacks<Cursor>() {
+        @Override
+        public Loader<Cursor> onCreateLoader(int id, Bundle args) {
+            switch (id) {
+                case CHECKED_SUM_LOADER_ID:
+                    // Thanks to Tom Curran for handling a sum query with sqliteOpenDbHelper
+                    // https://stackoverflow.com/questions/5854343/android-content-provider-sum-query
+                    String[] sumProjection = new String[] { "SUM(" + ItemEntry.COLUMN_KEEP + ") as " + ItemEntry.COLUMN_KEEP,
+                                                            "COUNT(*) as total"};
+                    return new CursorLoader(getApplicationContext(),
+                            ItemEntry.CONTENT_URI,
+                            sumProjection, null, null,
+                            "ASC");
+                default:
+                    throw new RuntimeException("Loader Not Implemented: " + id);
+            }
+        }
+
+        @Override
+        public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
+            if (data != null) {
+                data.moveToFirst();
+                int sumChecked = data.getInt(data.getColumnIndex(ItemEntry.COLUMN_KEEP));
+                int total = data.getInt(data.getColumnIndex("total"));
+                double keepAmount = Math.ceil(total / 4);
+
+                updateCreditsSubtitle(keepAmount - sumChecked);
+            }
+        }
+
+        @Override
+        public void onLoaderReset(Loader<Cursor> loader) {
+
+        }
+    };
+
+    // Interface method from adapter
     @Override
-    public void onLoaderReset(Loader<Cursor> loader) {
-        mItemAdapter.swapCursor(null);
+    public void getRemainingCredits() {
+        float credits = (float) mItemAdapter.getRemainingCredits();
+        updateCreditsSubtitle(credits);
     }
 }

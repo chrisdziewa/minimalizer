@@ -6,4 +6,9 @@
         android:icon="@drawable/ic_add_white"
         android:title="@string/add_item_button"
         app:showAsAction="always"/>
+
+    <item android:id="@+id/action_delete_all"
+        android:title="@string/delete_all_action"
+        app:showAsAction="never"/>
+
 </menu>
